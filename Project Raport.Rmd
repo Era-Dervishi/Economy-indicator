@@ -1,0 +1,120 @@
+---
+title: "R Programming Project"
+author: "Era Dervishi"
+date: "2024-06-04"
+output: html_document
+---
+
+```{r setup1, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Hyrje
+Analiza e datasetit të treguesve ekonomikë globalë synon të shqyrtojë dhe të interpretojë të dhënat për shpërndarjen, lidhjet dhe modele të mundshme të variablave ekonomike në nivel global. Kjo përfshin ngarkimin dhe pastrimin e të dhënave, analizën përmbledhëse të çdo variabli, vizualizimet grafike për të shfaqur shpërndarjet dhe lidhjet e mundshme, si dhe analizat statistikore të thelluara si matricën e korelacionit dhe analizën e hi-katrorit. Gjithashtu përfshin zhvillimin e modeleve të thjeshta të regresionit për të vlerësuar lidhjet e mundshme ndërmjet variablave ekonomike.
+
+
+
+```{r setup2, include=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+# Instalimi i paketave (këto rreshta duhet të ekzekutohen vetëm një herë)
+install.packages("readr")
+install.packages("tidyverse")
+install.packages("janitor")
+
+# Ngarkimi i paketave
+library(readr)
+library(tidyverse)
+library(janitor)
+```
+
+## Importimi dhe Eksplorimi i të Dhënave
+
+```{r setup3, include=TRUE}
+# Lexoni të dhënat nga skedari CSV
+data <- read.csv("C:/Users/Personal/Desktop/Project Programing in R/Global Economy Indicators 1.csv")
+
+glimpse(data)
+summary(data)
+```
+
+## Pastrimi dhe Transformimi i të Dhënave
+
+Të dhënat janë pastruar dhe transformuar për të siguruar që të gjitha vlerat janë të vlefshme dhe për të adresuar mungesat e të dhënave. Per ti realizuar keto kemi përdorur funksione si filter(), select(), mutate(), arrange()`.
+
+```{r cleaning_and_transforming_data, include=TRUE}
+#Pastrimi dhe Transformimi i të Dhënave
+
+# Përdorni dplyr për të bërë pastrimin dhe transformimin e të dhënave
+clean_data <- data %>%
+  select(`Country`, `Year`, `Population`) %>%
+  mutate(
+    Year = as.integer(Year),
+    Population = as.numeric(Population)
+  ) %>%
+  filter(Year == 2020) %>%
+  arrange(Country, Year)
+
+# Adresoni mungesat e të dhënave
+# Zëvendësoni vlerat e mungesave me median e grupit përkatës
+clean_data <- clean_data %>%
+  group_by(Country) %>%
+  mutate(Population = ifelse(is.na(Population), median(Population, na.rm = TRUE), Population)) %>%
+  ungroup()
+```
+## Vizualizimi i të Dhënave
+Histogrami më poshtë tregon shpërndarjen e popullsisë në vitin 2020. Ky grafikun ndihmon për të kuptuar frekuencën e vendeve me popullsi të ndryshme.
+
+```{r Vizualization1, echo = FALSE}
+library(ggplot2)
+
+
+ggplot(clean_data, aes(x = Population)) +
+  geom_histogram(binwidth = 50000000, fill = "blue", color = "black") +
+  labs(title = "Histogram of Population in 2020", x = "Population", y = "Frequency")
+```
+
+Scatter plot-i tregon popullsinë e vendeve të ndryshme në vitin 2020. Ky grafikun ndihmon për të vizualizuar shpërndarjen e popullsisë për secilin vend.
+
+```{r Vizualization2, echo = FALSE}
+ggplot(clean_data, aes(x = Country, y = Population)) +
+  geom_point(color = "red") +
+  labs(title = "Scatter Plot of Population by Country in 2020", x = "Country", y = "Population") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Grafiku i avancuar përdor facet_grid për të ndarë popullsinë sipas vendeve, duke e bërë më të lehtë krahasimin midis vendeve të ndryshme.
+
+```{r Vizualization3, echo = FALSE}
+ggplot(clean_data, aes(x = Country, y = Population)) +
+  geom_bar(stat = "identity", fill = "green") +
+  facet_grid(~Country) +
+  labs(title = "Population by Country in 2020 with Facet Grid", x = "Country Name", y = "Population") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+Grafiku interaktiv scatter plot tregon shperndarjen e popullsise për secilin vend në vitin 2020.
+Grafikët interaktivë të shpërndarjes (scatter plot) kanë disa avantazhe të rëndësishme te perdorimit te tyre te cilat jane:
+1. Interaktiviteti: Përdoruesit mund të navigojnë në grafik, të zmadhojnë ose zvogëlojnë, të lëvizin dhe të ndryshojnë perspektivën e të dhënave. Kjo mund të ndihmojë në zbulimin e trendeve dhe modeleve që mund të mos jenë të dukshme në një vizualizim statik.
+2. Informacioni i detajuar: Në një grafik interaktiv, kur vendoset mbi një pikë, mund të shfaqin informacion shtesë, siç janë vlerat e variablave të tjera për atë pikë.
+
+```{r Vizualization4, echo = FALSE, message=FALSE, warning=FALSE}
+# Instaloni dhe ngarkoni librarinë plotly
+install.packages("plotly")
+library(plotly)
+
+plot_ly(clean_data, x = ~Country, y = ~Population, type = 'scatter', mode = 'markers',
+        marker = list(size = 10, color = 'rgba(255, 0, 0, 0.8)')) %>%
+  layout(title = 'Interactive Scatter Plot of Population by Country in 2020',
+         xaxis = list(title = 'Country', tickangle = -45),
+         yaxis = list(title = 'Population'))
+
+```
+
+## Analiza Statistike
+Kur themi “korrelacion”, ne flasim për lidhjen midis dy gjërave. Nëse korrelacioni është i lartë (afër 1), kjo do të thotë se kur njëra prej tyre rritet, edhe tjetra rritet. Nëse korrelacioni është i ulët (afër 0), kjo do të thotë se nuk ka shumë lidhje midis tyre.
+Në rastin tone, korrelacioni midis popullsisë dhe vitit është shumë i ulët (correlation=0.0180743316226388), që do të thotë se nuk ka shumë lidhje midis tyre. Kjo do të thotë se ndryshimet në popullsi nuk janë të lidhura në mënyrë të drejtpërdrejtë me vitin.
+```{r Analiza, include=TRUE}
+# Analiza e Korrelacionit
+correlation <- cor(clean_data$Population, clean_data$Year, use = "complete.obs")
+```
