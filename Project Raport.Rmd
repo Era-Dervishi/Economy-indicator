@@ -1,120 +1,218 @@
 ---
-title: "R Programming Project"
+title: " Analiza e Indikatorëve të Ekonomisë Globale"
 author: "Era Dervishi"
-date: "2024-06-04"
 output: html_document
 ---
 
-```{r setup1, include=FALSE}
+
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ## Hyrje
-Analiza e datasetit të treguesve ekonomikë globalë synon të shqyrtojë dhe të interpretojë të dhënat për shpërndarjen, lidhjet dhe modele të mundshme të variablave ekonomike në nivel global. Kjo përfshin ngarkimin dhe pastrimin e të dhënave, analizën përmbledhëse të çdo variabli, vizualizimet grafike për të shfaqur shpërndarjet dhe lidhjet e mundshme, si dhe analizat statistikore të thelluara si matricën e korelacionit dhe analizën e hi-katrorit. Gjithashtu përfshin zhvillimin e modeleve të thjeshta të regresionit për të vlerësuar lidhjet e mundshme ndërmjet variablave ekonomike.
+Analiza e treguesve ekonomikë globale është një fushë e studimit që përfshin përpunimin dhe interpretimin e të dhënave për të kuptuar performancën ekonomike të vendeve në nivel global. Kjo përfshin analizën e shifrave si: prodhimi i brendshëm bruto (PBB), inflacioni, tregti ndërkombëtare, shkëmbimi valutor, dhe tregues të tjerë që reflektojnë shëndetin e ekonomisë së një vendi. Analizat mund të përdorin mjete statistikore dhe matematikore për të zbuluar tendencat, lidhjet dhe shkaqet e ndryshimeve në treguesit ekonomikë. Këto analiza ndihmojnë ekonomistët, politikanët dhe investitorët të marrin vendime të informuara në lidhje me politikat ekonomike, investimet dhe zhvillimin ekonomik global.
 
-
-
-```{r setup2, include=FALSE}
-options(repos = c(CRAN = "https://cloud.r-project.org/"))
-# Instalimi i paketave (këto rreshta duhet të ekzekutohen vetëm një herë)
-install.packages("readr")
-install.packages("tidyverse")
-install.packages("janitor")
-
-# Ngarkimi i paketave
-library(readr)
-library(tidyverse)
-library(janitor)
-```
-
-## Importimi dhe Eksplorimi i të Dhënave
+## Eksplorimi fillestar i të dhënave
 
 ```{r setup3, include=TRUE}
-# Lexoni të dhënat nga skedari CSV
-data <- read.csv("C:/Users/Personal/Desktop/Project Programing in R/Global Economy Indicators 1.csv")
+# Importing libraries
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(janitor)
 
-glimpse(data)
-summary(data)
+# Importing the dataset
+dataset <- read_csv("C:/Users/User/Desktop/Global Economy Indicators.csv")
+
+# Initial exploration of the data
+glimpse(dataset)
+summary(dataset)
 ```
 
 ## Pastrimi dhe Transformimi i të Dhënave
+Pas eksplorimit fillestar, u krye pastrimi dhe transformimi i të dhënave për të siguruar që të dhënat janë të rregullta dhe të përshtatshme për analizë. Këtu u fokusua në largimin e rreshtave me vlera të munguara dhe përzgjedhjen e kolonave të rëndësishme për analizën tonë.
 
-Të dhënat janë pastruar dhe transformuar për të siguruar që të gjitha vlerat janë të vlefshme dhe për të adresuar mungesat e të dhënave. Per ti realizuar keto kemi përdorur funksione si filter(), select(), mutate(), arrange()`.
+```{r setup4, include=TRUE}
 
-```{r cleaning_and_transforming_data, include=TRUE}
-#Pastrimi dhe Transformimi i të Dhënave
+# Cleaning and Transforming the Data
+cleaned_dataset <- dataset %>%
+  clean_names() %>%  # Cleaning column names using janitor
+  filter(!is.na(population), !is.na(gross_national_income_gni_in_usd), !is.na(ama_exchange_rate)) %>%
+  select(population, gross_national_income_gni_in_usd, ama_exchange_rate) %>%
+  arrange(population)
 
-# Përdorni dplyr për të bërë pastrimin dhe transformimin e të dhënave
-clean_data <- data %>%
-  select(`Country`, `Year`, `Population`) %>%
-  mutate(
-    Year = as.integer(Year),
-    Population = as.numeric(Population)
-  ) %>%
-  filter(Year == 2020) %>%
-  arrange(Country, Year)
-
-# Adresoni mungesat e të dhënave
-# Zëvendësoni vlerat e mungesave me median e grupit përkatës
-clean_data <- clean_data %>%
-  group_by(Country) %>%
-  mutate(Population = ifelse(is.na(Population), median(Population, na.rm = TRUE), Population)) %>%
-  ungroup()
+# Viewing the cleaned data
+glimpse(cleaned_dataset)
+summary(cleaned_dataset)
 ```
+
 ## Vizualizimi i të Dhënave
-Histogrami më poshtë tregon shpërndarjen e popullsisë në vitin 2020. Ky grafikun ndihmon për të kuptuar frekuencën e vendeve me popullsi të ndryshme.
-
-```{r Vizualization1, echo = FALSE}
-library(ggplot2)
-
-
-ggplot(clean_data, aes(x = Population)) +
-  geom_histogram(binwidth = 50000000, fill = "blue", color = "black") +
-  labs(title = "Histogram of Population in 2020", x = "Population", y = "Frequency")
+```{r setup5, include=TRUE}
+# Scatter plot to show the relationship between population and gross national income
+population_income_plot <- ggplot(cleaned_dataset, aes(x = population, y = gross_national_income_gni_in_usd)) +
+  geom_point(color = "blue") +
+  labs(title = "Relationship between Population and Gross National Income", x = "Population", y = "Gross National Income in USD")
+population_income_plot
 ```
 
-Scatter plot-i tregon popullsinë e vendeve të ndryshme në vitin 2020. Ky grafikun ndihmon për të vizualizuar shpërndarjen e popullsisë për secilin vend.
 
-```{r Vizualization2, echo = FALSE}
-ggplot(clean_data, aes(x = Country, y = Population)) +
-  geom_point(color = "red") +
-  labs(title = "Scatter Plot of Population by Country in 2020", x = "Country", y = "Population") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+Nga grafiku "Marrëdhënia midis Popullsisë dhe të Ardhurave Kombëtare Bruto", mund të bëjmë disa vëzhgime dhe analiza:
+
+ **Trendi i Përgjithshëm**: Ka një tendencë që të Ardhurat Kombëtare Bruto të rriten me rritjen e madhësisë së popullsisë. Kjo mund të tregojë se vendet me popullsi më të madhe kanë potencialin të prodhojnë më shumë të ardhura ekonomike.
+  
+  **Konsentracioni i Pikave të Të Dhënave**: Shumica e pikave janë të grumbulluara afër origjinës, që do të thotë se shumë vende kanë popullsi të vogla dhe GNI të ulët. Kjo mund të tregojë se vendet me popullsi të vogla përballen me sfida në arritjen e niveleve të larta të të ardhurave.
+ 
+ **Rritja Eksponenciale**: Duke u larguar nga origjina dhe duke u lëvizur djathtas në boshtin horizontal (që tregon rritje në popullsi), vërehet se GNI rritet në një mënyrë që duket eksponenciale, jo lineare. Kjo mund të tregojë se pas kalimit të një prag të caktuar popullsie, kapaciteti për të gjeneruar të ardhura kombëtare bruto rritet në mënyrë të shpejtë.
+
+ **Variabiliteti**: Edhe pse ka një trend të përgjithshëm rritës, ka një variabilitet të madh midis vendeve me popullsi të ngjashme. Kjo mund të tregojë se faktorë të tjerë përveç madhësisë së popullsisë ndikojnë në GNI.
+
+
+
+
+```{r setup6, include=TRUE}
+# Histogram to show the distribution of population
+population_histogram <- ggplot(cleaned_dataset, aes(x = population)) +
+  geom_histogram(binwidth = 1000000, fill = "skyblue", color = "black") +
+  labs(title = "Population Histogram", x = "Population", y = "Frequency")
+population_histogram
+```
+ 
+ Grafiku i histogramit të popullsisë  paraqet shpërndarjen e madhësive të popullsisë në një dataset.
+
+Shumica e shiritave janë të përqendruar afër boshtit y, që tregon se shumica e vlerave të popullsisë në këtë dataset janë të ulëta. Ka një shirit shumë të lartë në fillim që pastaj zvogëlohet shpejt; kjo sugjeron se ka shumë raste të popullsive të vogla dhe pak raste të popullsive të mëdha brenda këtij dataseti.
+
+Disa pikat kyçe të grafikut:
+
+ **Shiriti më i lartë**: Shiriti i parë dhe më i lartë tregon një frekuencë prej rreth **2500**, që do të thotë se ka një numër të madh të vlerave të popullsisë që janë shumë të ulëta, ndoshta nën **5 milion**.
+
+**Zvogëlimi i shpejtë**: Pas shiritit të parë, ka një zvogëlim të shpejtë në lartësinë e shiritave, që tregon se ka shumë më pak raste të popullsive të mëdha.
+
+ **Popullsia maksimale**: Nuk ka shumë shiritave që përfaqësojnë popullsi mbi **500 milion**, që sugjeron se rastet e popullsive të mëdha janë të rralla në këtë dataset.
+
+
+
+
+
+```{r setup7, include=TRUE}
+# Scatter plot to show the relationship between AMA exchange rate and gross national income
+exchange_gni_plot <- ggplot(cleaned_dataset, aes(x = ama_exchange_rate, y = gross_national_income_gni_in_usd)) +
+  geom_point(color = "darkgreen") +
+  labs(title = "Relationship between AMA Exchange Rate and Gross National Income", x = "AMA Exchange Rate", y = "Gross National Income in USD")
+exchange_gni_plot
 ```
 
-Grafiku i avancuar përdor facet_grid për të ndarë popullsinë sipas vendeve, duke e bërë më të lehtë krahasimin midis vendeve të ndryshme.
 
-```{r Vizualization3, echo = FALSE}
-ggplot(clean_data, aes(x = Country, y = Population)) +
-  geom_bar(stat = "identity", fill = "green") +
-  facet_grid(~Country) +
-  labs(title = "Population by Country in 2020 with Facet Grid", x = "Country Name", y = "Population") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+Nga grafiku "Marrëdhënia mes Kursit të Këmbimit të AMA dhe të Ardhurave Kombëtare Bruto", mund të bëjmë disa vëzhgime dhe analiza:
 
-```
+**Dendësia e Pikave të Të Dhënave**: Shumica e pikave janë të grumbulluara pranë origjinës, që tregon se për vlerat më të ulëta të kursit të këmbimit të AMA, të ardhurat kombëtare bruto janë gjithashtu relativisht të ulëta. Kjo mund të sugjerojë se ekonomitë me një kurs të këmbimit më të ulët të AMA-së kanë tendencë të kenë një PBB më të ulët.
+ 
+ **Shpërndarja e Pikave**: Ka një numër të vogël të pikave që janë të shpërndara drejt vlerave më të larta të kursit të këmbimit dhe të PBB-së. Kjo mund të tregojë se vetëm disa ekonomi arrijnë nivele të larta të të ardhurave kombëtare bruto, ndërsa shumica mbeten me të ardhura më të ulëta.
 
-Grafiku interaktiv scatter plot tregon shperndarjen e popullsise për secilin vend në vitin 2020.
-Grafikët interaktivë të shpërndarjes (scatter plot) kanë disa avantazhe të rëndësishme te perdorimit te tyre te cilat jane:
-1. Interaktiviteti: Përdoruesit mund të navigojnë në grafik, të zmadhojnë ose zvogëlojnë, të lëvizin dhe të ndryshojnë perspektivën e të dhënave. Kjo mund të ndihmojë në zbulimin e trendeve dhe modeleve që mund të mos jenë të dukshme në një vizualizim statik.
-2. Informacioni i detajuar: Në një grafik interaktiv, kur vendoset mbi një pikë, mund të shfaqin informacion shtesë, siç janë vlerat e variablave të tjera për atë pikë.
-
-```{r Vizualization4, echo = FALSE, message=FALSE, warning=FALSE}
-# Instaloni dhe ngarkoni librarinë plotly
-install.packages("plotly")
-library(plotly)
-
-plot_ly(clean_data, x = ~Country, y = ~Population, type = 'scatter', mode = 'markers',
-        marker = list(size = 10, color = 'rgba(255, 0, 0, 0.8)')) %>%
-  layout(title = 'Interactive Scatter Plot of Population by Country in 2020',
-         xaxis = list(title = 'Country', tickangle = -45),
-         yaxis = list(title = 'Population'))
-
-```
+ **Mungesa e një Trendi të Qartë**: Nuk duket të ketë një trend të qartë ose një marrëdhënie lineare midis kursit të këmbimit të AMA dhe të ardhurave kombëtare bruto. Kjo mund të tregojë se faktorë të tjerë ndikojnë në PBB përveç kursit të këmbimit të AMA.
+ 
+ **Vlerat Anomale**: Nëse ka ndonjë pikë që shfaqet larg grupit kryesor të të dhënave, ato mund të konsiderohen si vlera anomale. Këto vlera anomale mund të përfaqësojnë ekonomi që kanë performancë të jashtëzakonshme ose rrethana unike që i bëjnë ato të dallohen nga të tjerat.
+ 
+ **Interpretimi i Vlerave të Larta**: Për vlerat më të larta të kursit të këmbimit dhe të PBB-së, do të ishte e dobishme të kuptonim kontekstin më të gjerë ekonomik dhe politik që mund të ndikojë në këto vlera.
+ 
 
 ## Analiza Statistike
-Kur themi “korrelacion”, ne flasim për lidhjen midis dy gjërave. Nëse korrelacioni është i lartë (afër 1), kjo do të thotë se kur njëra prej tyre rritet, edhe tjetra rritet. Nëse korrelacioni është i ulët (afër 0), kjo do të thotë se nuk ka shumë lidhje midis tyre.
-Në rastin tone, korrelacioni midis popullsisë dhe vitit është shumë i ulët (correlation=0.0180743316226388), që do të thotë se nuk ka shumë lidhje midis tyre. Kjo do të thotë se ndryshimet në popullsi nuk janë të lidhura në mënyrë të drejtpërdrejtë me vitin.
-```{r Analiza, include=TRUE}
-# Analiza e Korrelacionit
-correlation <- cor(clean_data$Population, clean_data$Year, use = "complete.obs")
+Pas vizualizimit të të dhënave, u krye një analizë statistikore për të zbuluar korrelacionin midis popullsisë dhe të ardhurave kombëtare bruto, si dhe për të kryer një model regresioni linear për të parashikuar të ardhurat kombëtare bruto bazuar në popullsi.
+
+```{r setup8, include=TRUE}
+
+# Correlation between population and gross national income
+correlation <- cor(cleaned_dataset$population, cleaned_dataset$gross_national_income_gni_in_usd)
+print(correlation)
 ```
+Vlera e korrelacionit është 0.3945702, e cila është  pozitive dhe afër 0.4. Kjo tregon një lidhje të dobët, por pozitive midis popullsisë dhe të ardhurave kombëtare bruto. Pra, kur popullsia e një vendi rritet, ka tendencë që të ardhurat kombëtare bruto të rriten gjithashtu, megjithatë, lidhja nuk është shumë e fortë.
+
+```{r setup13, include=TRUE}
+column1 <- "Imports of goods and services"
+column2 <- "Exports of goods and services"
+correlation_df <- data.frame(x = dataset[[column1]], y = dataset[[column2]])
+
+# Krijo një grafik të shfaqjes së korelacionit
+ggplot(correlation_df, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = paste("Korelacioni midis", column1, "dhe", column2),
+       x = column1, y = column2) +
+  theme_minimal()
+```
+
+```{r setup14, include=TRUE}
+column1 <- "Gross Domestic Product (GDP)"
+column2 <- "Population"
+
+# Llogaritja e korelacionit midis kolonave të përzgjedhura
+correlation_matrix <- cor(dataset[[column1]], dataset[[column2]])
+
+# Konverto matricën e korelacionit në një data frame
+correlation_df <- data.frame(col1 = column1, col2 = column2, corr = correlation_matrix)
+
+# Krijo një heatmap për të paraqitur korelacionin
+ggplot(correlation_df, aes(x = col1, y = col2, fill = corr)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "green", high = "darkblue") +
+  labs(title = paste("Heatmap i Korelacionit midis", column1, "dhe", column2),
+       x = column1, y = column2) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+```{r setup9, include=TRUE}
+# Linear Regression
+linear_model <- lm(gross_national_income_gni_in_usd ~ population, data = cleaned_dataset)
+summary(linear_model)
+```
+
+Analiza e rezultateve të modelit regresionit linear tregon disa informacione të rëndësishme lidhur me marrëdhënien midis popullsisë dhe të ardhurave kombëtare bruto (Gross National Income - GNI):
+
+ **Intercept dhe Koeficienti i Popullsisë**:
+   - Intercept tregon vlerën e pritshme të GNI kur popullsia është zero. Në këtë rast, intercept është 8.451e+10, që tregon vlerën fillestare të pritshme të GNI.
+   - Koeficienti për popullsinë është 3.437e+03, që do të thotë se për çdo njësi rritje në popullsi, pritshmëria e GNI rritet me 3.437e+03.
+
+ **Humbjet e Mbetura (Residuals)**:
+   - Humbjet e mbetura përshkruajnë ndryshimet mes vlerës reale të GNI dhe vlerës së parashikuar nga modeli. Në rastin tonë, humbjet e mbetura variojnë nga -3.694e+12 deri në 2.236e+13, tregon që modeli mund të ketë humbje të mëdha për disa vlera të dhënash.
+
+ **Gabimi Standard i Mbetur (Residual Standard Error)**:
+   - Një gabim standard i ulët tregon që modeli ka performuar mirë në përdorimin e të dhënave për të bërë parashikime. Në këtë rast, gabimi standard i mbetur është 9.136e+11, që tregon një shkallë të konsiderueshme të variacionit në vlerat e pritshme të GNI.
+
+ **R-katrori i Shumëfishtë dhe R-katrori i Rregulluar**:
+   - R-katrori i shumëfishtë dhe i rregulluar tregon se sa mirë modeli ka përputhje me të dhënat. Në rastin tonë, R-katrori i shumëfishtë është 0.1557 dhe R-katrori i rregulluar është 0.1556. Kjo tregon se vetëm rreth 15.57% e variabilitetit të GNI është shpjeguar nga variabla e popullsisë në model.
+
+ **F-Statistika**:
+   - F-Statistika jep informacion në lidhje me rëndësinë e modelit në përgjithësi. Një p-vlerë shumë e ulët (p-value < 0.05) tregon se modeli është i rëndësishëm statistikisht. Në rastin tonë, p-vlera është shumë e vogël (p-value < 2.2e-16), që tregon se modeli është i rëndësishëm.
+
+```{r setup10, include=TRUE}
+# Linear Regression
+library(ggplot2)
+ggplot(data = dataset, aes(x = Year, y = `Gross Domestic Product (GDP)`)) +
+  geom_line() +
+  labs(title = "Trendi i GDP", x = "Viti", y = "GDP")
+```
+ Grafiku tregon një tendencë rritëse të GDP-së me disa fluktuacione. Ky grafik është interesant sepse vizualisht paraqet zhvillimin ekonomik  gjatë pesë dekadave. 
+ 
+```{r setup12, include=TRUE}
+dataset$GDP_Absolute_Change <- c(NA,diff(dataset$`Gross Domestic Product (GDP)`))
+
+# Përqasja e GDP me GNI në USD për frymë
+dataset$GDP_to_GNI_Ratio <- dataset$`Gross Domestic Product (GDP)` / dataset$`Gross National Income(GNI) in USD`
+
+# Vizualizimi i trendit të ndryshimeve absolute të GDP
+ggplot(data = dataset, aes(x = Year, y = GDP_Absolute_Change)) +
+  geom_line() +
+  labs(title = "Ndryshimet Absolute të GDP në kohë", x = "Viti", y = "Ndryshimi Absolut i GDP")
+
+# Vizualizimi i përqasjes së GDP me GNI në USD për frymë
+ggplot(data = dataset, aes(x = Year, y = GDP_to_GNI_Ratio)) +
+  geom_line() +
+  labs(title = "Përqasja e GDP me GNI në USD për frymë", x = "Viti", y = "GDP/GNI Ratio")
+``` 
+  
+  
+  Shifrat e GDP shkojnë nga 0e+00 deri në 2.0e+13. Grafiku tregon një tendencë rritëse të GDP-së me disa fluktuacione. Ky grafik është interesant sepse vizualisht paraqet zhvillimin ekonomik  gjatë pesë dekadave.
